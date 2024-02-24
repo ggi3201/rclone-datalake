@@ -210,9 +210,17 @@ rclone config file under the ` + "`client_id`, `tenant` and `client_secret`" + `
 keys instead of setting ` + "`service_principal_file`" + `.
 `,
 			Advanced: true,
-		}, {
-			Name: "use_msi",
-			Help: `Use a managed service identity to authenticate (only works in Azure).
+		},
+			{
+				Name:     "use_authorization_flow",
+				Default:  false,
+				Advanced: true,
+				Help: `Use the authorization flow for obtaining the access token.
+When true, use the authorization flow to obtain the access token instead of using the client secret or certificate. 
+see [Interactive Browser Authentication](https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-auth-code-flow)`,
+			}, {
+				Name: "use_msi",
+				Help: `Use a managed service identity to authenticate (only works in Azure).
 
 When true, use a [managed service identity](https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/)
 to authenticate to Azure Storage instead of a SAS token or account key.
@@ -222,48 +230,48 @@ be used by default. If the resource has no system-assigned but exactly one user-
 the user-assigned identity will be used by default. If the resource has multiple user-assigned
 identities, the identity to use must be explicitly specified using exactly one of the msi_object_id,
 msi_client_id, or msi_mi_res_id parameters.`,
-			Default:  false,
-			Advanced: true,
-		}, {
-			Name:      "msi_object_id",
-			Help:      "Object ID of the user-assigned MSI to use, if any.\n\nLeave blank if msi_client_id or msi_mi_res_id specified.",
-			Advanced:  true,
-			Sensitive: true,
-		}, {
-			Name:      "msi_client_id",
-			Help:      "Object ID of the user-assigned MSI to use, if any.\n\nLeave blank if msi_object_id or msi_mi_res_id specified.",
-			Advanced:  true,
-			Sensitive: true,
-		}, {
-			Name:      "msi_mi_res_id",
-			Help:      "Azure resource ID of the user-assigned MSI to use, if any.\n\nLeave blank if msi_client_id or msi_object_id specified.",
-			Advanced:  true,
-			Sensitive: true,
-		}, {
-			Name:     "use_emulator",
-			Help:     "Uses local storage emulator if provided as 'true'.\n\nLeave blank if using real azure storage endpoint.",
-			Default:  false,
-			Advanced: true,
-		}, {
-			Name:     "endpoint",
-			Help:     "Endpoint for the service.\n\nLeave blank normally.",
-			Advanced: true,
-		}, {
-			Name:     "upload_cutoff",
-			Help:     "Cutoff for switching to chunked upload (<= 256 MiB) (deprecated).",
-			Advanced: true,
-		}, {
-			Name: "chunk_size",
-			Help: `Upload chunk size.
+				Default:  false,
+				Advanced: true,
+			}, {
+				Name:      "msi_object_id",
+				Help:      "Object ID of the user-assigned MSI to use, if any.\n\nLeave blank if msi_client_id or msi_mi_res_id specified.",
+				Advanced:  true,
+				Sensitive: true,
+			}, {
+				Name:      "msi_client_id",
+				Help:      "Object ID of the user-assigned MSI to use, if any.\n\nLeave blank if msi_object_id or msi_mi_res_id specified.",
+				Advanced:  true,
+				Sensitive: true,
+			}, {
+				Name:      "msi_mi_res_id",
+				Help:      "Azure resource ID of the user-assigned MSI to use, if any.\n\nLeave blank if msi_client_id or msi_object_id specified.",
+				Advanced:  true,
+				Sensitive: true,
+			}, {
+				Name:     "use_emulator",
+				Help:     "Uses local storage emulator if provided as 'true'.\n\nLeave blank if using real azure storage endpoint.",
+				Default:  false,
+				Advanced: true,
+			}, {
+				Name:     "endpoint",
+				Help:     "Endpoint for the service.\n\nLeave blank normally.",
+				Advanced: true,
+			}, {
+				Name:     "upload_cutoff",
+				Help:     "Cutoff for switching to chunked upload (<= 256 MiB) (deprecated).",
+				Advanced: true,
+			}, {
+				Name: "chunk_size",
+				Help: `Upload chunk size.
 
 Note that this is stored in memory and there may be up to
 "--transfers" * "--azureblob-upload-concurrency" chunks stored at once
 in memory.`,
-			Default:  defaultChunkSize,
-			Advanced: true,
-		}, {
-			Name: "upload_concurrency",
-			Help: `Concurrency for multipart uploads.
+				Default:  defaultChunkSize,
+				Advanced: true,
+			}, {
+				Name: "upload_concurrency",
+				Help: `Concurrency for multipart uploads.
 
 This is the number of chunks of the same file that are uploaded
 concurrently.
@@ -279,11 +287,11 @@ raise this to 64. Note that this will use more memory.
 Note that chunks are stored in memory and there may be up to
 "--transfers" * "--azureblob-upload-concurrency" chunks stored at once
 in memory.`,
-			Default:  16,
-			Advanced: true,
-		}, {
-			Name: "list_chunk",
-			Help: `Size of blob list.
+				Default:  16,
+				Advanced: true,
+			}, {
+				Name: "list_chunk",
+				Help: `Size of blob list.
 
 This sets the number of blobs requested in each listing chunk. Default
 is the maximum, 5000. "List blobs" requests are permitted 2 minutes
@@ -292,11 +300,11 @@ minutes per megabyte on average, it will time out (
 [source](https://docs.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-blob-service-operations#exceptions-to-default-timeout-interval)
 ). This can be used to limit the number of blobs items to return, to
 avoid the time out.`,
-			Default:  maxListChunkSize,
-			Advanced: true,
-		}, {
-			Name: "access_tier",
-			Help: `Access tier of blob: hot, cool, cold or archive.
+				Default:  maxListChunkSize,
+				Advanced: true,
+			}, {
+				Name: "access_tier",
+				Help: `Access tier of blob: hot, cool, cold or archive.
 
 Archived blobs can be restored by setting access tier to hot, cool or
 cold. Leave blank if you intend to use default access tier, which is
@@ -308,11 +316,11 @@ are not modified, specifying "access tier" to new one will have no effect.
 If blobs are in "archive tier" at remote, trying to perform data transfer
 operations from remote will not be allowed. User should first restore by
 tiering blob to "Hot", "Cool" or "Cold".`,
-			Advanced: true,
-		}, {
-			Name:    "archive_tier_delete",
-			Default: false,
-			Help: fmt.Sprintf(`Delete archive tier blobs before overwriting.
+				Advanced: true,
+			}, {
+				Name:    "archive_tier_delete",
+				Default: false,
+				Help: fmt.Sprintf(`Delete archive tier blobs before overwriting.
 
 Archive tier blobs cannot be updated. So without this flag, if you
 attempt to update an archive tier blob, then rclone will produce the
@@ -326,61 +334,61 @@ replacement.  This has the potential for data loss if the upload fails
 (unlike updating a normal blob) and also may cost more since deleting
 archive tier blobs early may be chargable.
 `, errCantUpdateArchiveTierBlobs),
-			Advanced: true,
-		}, {
-			Name: "disable_checksum",
-			Help: `Don't store MD5 checksum with object metadata.
+				Advanced: true,
+			}, {
+				Name: "disable_checksum",
+				Help: `Don't store MD5 checksum with object metadata.
 
 Normally rclone will calculate the MD5 checksum of the input before
 uploading it so it can add it to metadata on the object. This is great
 for data integrity checking but can cause long delays for large files
 to start uploading.`,
-			Default:  false,
-			Advanced: true,
-		}, {
-			Name:     "memory_pool_flush_time",
-			Default:  fs.Duration(time.Minute),
-			Advanced: true,
-			Hide:     fs.OptionHideBoth,
-			Help:     `How often internal memory buffer pools will be flushed. (no longer used)`,
-		}, {
-			Name:     "memory_pool_use_mmap",
-			Default:  false,
-			Advanced: true,
-			Hide:     fs.OptionHideBoth,
-			Help:     `Whether to use mmap buffers in internal memory pool. (no longer used)`,
-		}, {
-			Name:     config.ConfigEncoding,
-			Help:     config.ConfigEncodingHelp,
-			Advanced: true,
-			Default: (encoder.EncodeInvalidUtf8 |
-				encoder.EncodeSlash |
-				encoder.EncodeCtl |
-				encoder.EncodeDel |
-				encoder.EncodeBackSlash |
-				encoder.EncodeRightPeriod),
-		}, {
-			Name:    "public_access",
-			Help:    "Public access level of a container: blob or container.",
-			Default: "",
-			Examples: []fs.OptionExample{
-				{
-					Value: "",
-					Help:  "The container and its blobs can be accessed only with an authorized request.\nIt's a default value.",
-				}, {
-					Value: string(container.PublicAccessTypeBlob),
-					Help:  "Blob data within this container can be read via anonymous request.",
-				}, {
-					Value: string(container.PublicAccessTypeContainer),
-					Help:  "Allow full public read access for container and blob data.",
+				Default:  false,
+				Advanced: true,
+			}, {
+				Name:     "memory_pool_flush_time",
+				Default:  fs.Duration(time.Minute),
+				Advanced: true,
+				Hide:     fs.OptionHideBoth,
+				Help:     `How often internal memory buffer pools will be flushed. (no longer used)`,
+			}, {
+				Name:     "memory_pool_use_mmap",
+				Default:  false,
+				Advanced: true,
+				Hide:     fs.OptionHideBoth,
+				Help:     `Whether to use mmap buffers in internal memory pool. (no longer used)`,
+			}, {
+				Name:     config.ConfigEncoding,
+				Help:     config.ConfigEncodingHelp,
+				Advanced: true,
+				Default: (encoder.EncodeInvalidUtf8 |
+					encoder.EncodeSlash |
+					encoder.EncodeCtl |
+					encoder.EncodeDel |
+					encoder.EncodeBackSlash |
+					encoder.EncodeRightPeriod),
+			}, {
+				Name:    "public_access",
+				Help:    "Public access level of a container: blob or container.",
+				Default: "",
+				Examples: []fs.OptionExample{
+					{
+						Value: "",
+						Help:  "The container and its blobs can be accessed only with an authorized request.\nIt's a default value.",
+					}, {
+						Value: string(container.PublicAccessTypeBlob),
+						Help:  "Blob data within this container can be read via anonymous request.",
+					}, {
+						Value: string(container.PublicAccessTypeContainer),
+						Help:  "Allow full public read access for container and blob data.",
+					},
 				},
-			},
-			Advanced: true,
-		}, {
-			Name:     "directory_markers",
-			Default:  false,
-			Advanced: true,
-			Help: `Upload an empty object with a trailing slash when a new directory is created
+				Advanced: true,
+			}, {
+				Name:     "directory_markers",
+				Default:  false,
+				Advanced: true,
+				Help: `Upload an empty object with a trailing slash when a new directory is created
 
 Empty folders are unsupported for bucket based remotes, this option
 creates an empty object ending with "/", to persist the folder.
@@ -388,39 +396,39 @@ creates an empty object ending with "/", to persist the folder.
 This object also has the metadata "` + dirMetaKey + ` = ` + dirMetaValue + `" to conform to
 the Microsoft standard.
  `,
-		}, {
-			Name: "no_check_container",
-			Help: `If set, don't attempt to check the container exists or create it.
+			}, {
+				Name: "no_check_container",
+				Help: `If set, don't attempt to check the container exists or create it.
 
 This can be useful when trying to minimise the number of transactions
 rclone does if you know the container exists already.
 `,
-			Default:  false,
-			Advanced: true,
-		}, {
-			Name:     "no_head_object",
-			Help:     `If set, do not do HEAD before GET when getting objects.`,
-			Default:  false,
-			Advanced: true,
-		}, {
-			Name: "delete_snapshots",
-			Help: `Set to specify how to deal with snapshots on blob deletion.`,
-			Examples: []fs.OptionExample{
-				{
-					Value: "",
-					Help:  "By default, the delete operation fails if a blob has snapshots",
-				}, {
-					Value: string(blob.DeleteSnapshotsOptionTypeInclude),
-					Help:  "Specify 'include' to remove the root blob and all its snapshots",
-				}, {
-					Value: string(blob.DeleteSnapshotsOptionTypeOnly),
-					Help:  "Specify 'only' to remove only the snapshots but keep the root blob.",
+				Default:  false,
+				Advanced: true,
+			}, {
+				Name:     "no_head_object",
+				Help:     `If set, do not do HEAD before GET when getting objects.`,
+				Default:  false,
+				Advanced: true,
+			}, {
+				Name: "delete_snapshots",
+				Help: `Set to specify how to deal with snapshots on blob deletion.`,
+				Examples: []fs.OptionExample{
+					{
+						Value: "",
+						Help:  "By default, the delete operation fails if a blob has snapshots",
+					}, {
+						Value: string(blob.DeleteSnapshotsOptionTypeInclude),
+						Help:  "Specify 'include' to remove the root blob and all its snapshots",
+					}, {
+						Value: string(blob.DeleteSnapshotsOptionTypeOnly),
+						Help:  "Specify 'only' to remove only the snapshots but keep the root blob.",
+					},
 				},
-			},
-			Default:   "",
-			Exclusive: true,
-			Advanced:  true,
-		}},
+				Default:   "",
+				Exclusive: true,
+				Advanced:  true,
+			}},
 	})
 }
 
@@ -431,6 +439,7 @@ type Options struct {
 	Key                        string               `config:"key"`
 	SASURL                     string               `config:"sas_url"`
 	Tenant                     string               `config:"tenant"`
+	UseAuthorizationFlow       bool                 `config:"use_authorization_flow"`
 	ClientID                   string               `config:"client_id"`
 	ClientSecret               string               `config:"client_secret"`
 	ClientCertificatePath      string               `config:"client_certificate_path"`
@@ -785,6 +794,27 @@ func NewFs(ctx context.Context, name, root string, m configmap.Mapper) (fs.Fs, e
 		if err != nil {
 			return nil, fmt.Errorf("error creating a client secret credential: %w", err)
 		}
+	case opt.ClientID != "" && opt.Tenant != "" && opt.ClientSecret == "" && opt.UseAuthorizationFlow:
+		//Authorization flow Oauth
+
+		cred, err = azidentity.NewInteractiveBrowserCredential(&azidentity.InteractiveBrowserCredentialOptions{
+			ClientID:    opt.ClientID,
+			TenantID:    opt.Tenant,
+			RedirectURL: "http://localhost:8080",
+		})
+
+		if err != nil {
+			return nil, fmt.Errorf("error creating an interactive browser credential: %w", err)
+		}
+
+		serviceURL := fmt.Sprintf("https://%s.%s", opt.Account, storageDefaultBaseURL)
+		fmt.Println("serviceURL: ", serviceURL)
+
+		f.svc, err = service.NewClient(serviceURL, cred, &clientOpt)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create service client: %w", err)
+		}
+
 	case opt.ClientID != "" && opt.Tenant != "" && opt.ClientCertificatePath != "":
 		// Service principal with certificate
 		//
