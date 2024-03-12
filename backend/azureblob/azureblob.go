@@ -14,6 +14,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -213,6 +214,13 @@ keys instead of setting ` + "`service_principal_file`" + `.
 		},
 			{
 				Name:     "use_authorization_flow",
+				Default:  false,
+				Advanced: true,
+				Help: `Use the authorization flow for obtaining the access token.
+When true, use the authorization flow to obtain the access token instead of using the client secret or certificate. 
+see [Interactive Browser Authentication](https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-auth-code-flow)`,
+			}, {
+				Name:     "use_device_code",
 				Default:  false,
 				Advanced: true,
 				Help: `Use the authorization flow for obtaining the access token.
@@ -440,6 +448,7 @@ type Options struct {
 	SASURL                     string               `config:"sas_url"`
 	Tenant                     string               `config:"tenant"`
 	UseAuthorizationFlow       bool                 `config:"use_authorization_flow"`
+	UseDeviceCode              bool                 `config:"use_device_code_flow"`
 	ClientID                   string               `config:"client_id"`
 	ClientSecret               string               `config:"client_secret"`
 	ClientCertificatePath      string               `config:"client_certificate_path"`
@@ -659,6 +668,18 @@ func (tr transporter) Do(req *http.Request) (*http.Response, error) {
 	return tr.RoundTripper.RoundTrip(req)
 }
 
+func findAvailablePort(startingPort int) int {
+	for {
+		port := strconv.Itoa(startingPort)
+		listener, err := net.Listen("tcp", "localhost:"+port)
+		if err == nil {
+			listener.Close()
+			return startingPort
+		}
+		startingPort++
+	}
+}
+
 // NewFs constructs an Fs from the path, container:path
 func NewFs(ctx context.Context, name, root string, m configmap.Mapper) (fs.Fs, error) {
 	// Parse config into Options struct
@@ -796,11 +817,15 @@ func NewFs(ctx context.Context, name, root string, m configmap.Mapper) (fs.Fs, e
 		}
 	case opt.ClientID != "" && opt.Tenant != "" && opt.ClientSecret == "" && opt.UseAuthorizationFlow:
 		//Authorization flow Oauth
+		startingPort := 8080
+		availablePort := findAvailablePort(startingPort)
+		redirectURL := "http://localhost:" + strconv.Itoa(availablePort)
 
 		cred, err = azidentity.NewInteractiveBrowserCredential(&azidentity.InteractiveBrowserCredentialOptions{
-			ClientID:    opt.ClientID,
-			TenantID:    opt.Tenant,
-			RedirectURL: "http://localhost:8080",
+			ClientID: opt.ClientID,
+			TenantID: opt.Tenant,
+			//RedirectURL: "http://localhost:8080",
+			RedirectURL: redirectURL,
 		})
 
 		if err != nil {
@@ -814,7 +839,24 @@ func NewFs(ctx context.Context, name, root string, m configmap.Mapper) (fs.Fs, e
 		if err != nil {
 			return nil, fmt.Errorf("failed to create service client: %w", err)
 		}
+	case opt.ClientID != "" && opt.Tenant != "" && opt.ClientSecret == "" && opt.UseDeviceCode:
+		//Authorization flow Oauth
+		cred, err = azidentity.NewDeviceCodeCredential(&azidentity.DeviceCodeCredentialOptions{
+			ClientID: opt.ClientID,
+			TenantID: opt.Tenant,
+		})
 
+		if err != nil {
+			return nil, fmt.Errorf("error creating an interactive browser credential: %w", err)
+		}
+
+		serviceURL := fmt.Sprintf("https://%s.%s", opt.Account, storageDefaultBaseURL)
+		fmt.Println("serviceURL: ", serviceURL)
+
+		f.svc, err = service.NewClient(serviceURL, cred, &clientOpt)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create service client: %w", err)
+		}
 	case opt.ClientID != "" && opt.Tenant != "" && opt.ClientCertificatePath != "":
 		// Service principal with certificate
 		//
